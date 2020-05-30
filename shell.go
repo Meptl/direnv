@@ -15,6 +15,9 @@ type Shell interface {
 
 	// Dump outputs and evaluatable string that sets the env in the host shell
 	Dump(env Env) string
+
+	// Exec converts a list of commands it into a single executable line
+	Exec(commands []string) (string, error)
 }
 
 // ShellExport represents environment variables to add and remove on the host

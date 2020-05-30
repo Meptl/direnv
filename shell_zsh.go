@@ -1,5 +1,9 @@
 package main
 
+import (
+	"strings"
+)
+
 // ZSH is a singleton instance of ZSH_T
 type zsh struct{}
 
@@ -42,6 +46,13 @@ func (sh zsh) Dump(env Env) (out string) {
 		out += sh.export(key, value)
 	}
 	return out
+}
+
+func (sh zsh) Exec(commands []string) (string, error) {
+	if len(commands) == 0 {
+		return "", nil
+	}
+	return strings.Join(commands, ";") + ";", nil
 }
 
 func (sh zsh) export(key, value string) string {

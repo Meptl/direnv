@@ -2,6 +2,7 @@ package main
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -37,6 +38,81 @@ func TestEnvDiffEmptyValue(t *testing.T) {
 	}
 }
 
+func TestPreUnloadHooks(t *testing.T) {
+	expectPreUnloadHook := func(before, after Env, expectation string) {
+		t.Helper()
+		diff := BuildEnvDiff(before, after)
+		preUnloadHooks := diff.PreUnloadHooks(Zsh)
+		if preUnloadHooks != expectation {
+			t.Errorf("got \"%s\"; wanted \"%s\"", preUnloadHooks, expectation)
+		}
+	}
+
+	before := Env{DIRENV_PREUNLOAD: "echo 3;"}
+	after := Env{}
+	expectPreUnloadHook(before, after, "echo 3;")
+
+	before = Env{}
+	after = Env{DIRENV_PREUNLOAD: "echo 3;"}
+	expectPreUnloadHook(before, after, "")
+
+	before = Env{DIRENV_PREUNLOAD: loadHooksAsString("echo 3", "echo 4")}
+	after = Env{}
+	expectPreUnloadHook(before, after, "echo 3;echo 4;")
+
+	before = Env{DIRENV_PREUNLOAD: loadHooksAsString("echo 3", "echo 4")}
+	after = Env{DIRENV_PREUNLOAD: loadHooksAsString("echo 3", "echo 4")}
+	expectPreUnloadHook(before, after, "")
+
+	before = Env{DIRENV_PREUNLOAD: loadHooksAsString("echo 3", "echo 4")}
+	after = Env{DIRENV_PREUNLOAD: loadHooksAsString("echo 3", "echo 5", "echo 4")}
+	expectPreUnloadHook(before, after, "")
+
+	before = Env{DIRENV_PREUNLOAD: loadHooksAsString("echo 3", "echo 4", "echo 5")}
+	after = Env{DIRENV_PREUNLOAD: loadHooksAsString("echo 3", "echo 5", "echo 4")}
+	// Strange, but it is what is it is.
+	expectPreUnloadHook(before, after, "echo 5;")
+
+	before = Env{DIRENV_PREUNLOAD: loadHooksAsString("echo 3", "echo 4", "echo 5")}
+	after = Env{DIRENV_PREUNLOAD: loadHooksAsString("echo 3", "echo 4")}
+	expectPreUnloadHook(before, after, "echo 5;")
+}
+
+func TestPostLoadHooks(t *testing.T) {
+	expectPostLoadHook := func(before, after Env, expectation string) {
+		t.Helper()
+		diff := BuildEnvDiff(before, after)
+		postLoadHooks := diff.PostLoadHooks(Zsh)
+		if postLoadHooks != expectation {
+			t.Errorf("got \"%s\"; wanted \"%s\"", postLoadHooks, expectation)
+		}
+	}
+
+	before := Env{}
+	after := Env{DIRENV_POSTLOAD: "echo 3;"}
+	expectPostLoadHook(before, after, "echo 3;")
+
+	before = Env{DIRENV_POSTLOAD: "echo 3;"}
+	after = Env{}
+	expectPostLoadHook(before, after, "")
+
+	before = Env{}
+	after = Env{DIRENV_POSTLOAD: loadHooksAsString("echo 3", "echo 4")}
+	expectPostLoadHook(before, after, "echo 3;echo 4;")
+
+	before = Env{DIRENV_POSTLOAD: loadHooksAsString("echo 3", "echo 4")}
+	after = Env{DIRENV_POSTLOAD: loadHooksAsString("echo 3", "echo 4")}
+	expectPostLoadHook(before, after, "")
+
+	before = Env{DIRENV_POSTLOAD: loadHooksAsString("echo 3", "echo 4")}
+	after = Env{DIRENV_POSTLOAD: loadHooksAsString("echo 3", "echo 5", "echo 4")}
+	expectPostLoadHook(before, after, "echo 5;")
+
+	before = Env{DIRENV_POSTLOAD: loadHooksAsString("echo 3", "echo 4")}
+	after = Env{DIRENV_POSTLOAD: "echo 3"}
+	expectPostLoadHook(before, after, "")
+}
+
 func TestIgnoredEnv(t *testing.T) {
 	if !IgnoredEnv(DIRENV_BASH) {
 		t.Fail()
@@ -53,4 +129,8 @@ func TestIgnoredEnv(t *testing.T) {
 	if !IgnoredEnv("__fishx") {
 		t.Fail()
 	}
+}
+
+func loadHooksAsString(commands ...string) string {
+	return strings.Join(commands, LoadHookDelimiter)
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 )
 
 type elvish struct{}
@@ -48,6 +49,10 @@ func (sh elvish) Dump(env Env) (out string) {
 		panic(err)
 	}
 	return buf.String()
+}
+
+func (sh elvish) Exec(commands []string) (string, error) {
+	return "", errors.New("elvish shell exec unimplemented")
 }
 
 var (

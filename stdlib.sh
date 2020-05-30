@@ -21,6 +21,9 @@ DIRENV_LOG_FORMAT="${DIRENV_LOG_FORMAT-direnv: %s}"
 # Where direnv configuration should be stored
 direnv_config_dir="${DIRENV_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/direnv}"
 
+# A delimiter to place between load hooks.
+direnv_load_hook_delimiter="$(direnv load-hook-delimiter)"
+
 # This variable can be used by programs to detect when they are running inside
 # of a .envrc evaluation context. It is ignored by the direnv diffing
 # algorithm and so it won't be re-exported.
@@ -354,6 +357,36 @@ source_env_if_exists() {
   if [[ -f "$1" ]]; then source_env "$1"; fi
 }
 
+# Usage: load_hook_add <varname> <command> [<command> ...]
+#
+# Adds commands to a variable using the load hook delimiter.
+load_hook_add() {
+  local delim=$direnv_load_hook_delimiter var_name="$1" str="$2"
+  shift; shift
+  for item in "$@"; do
+      str="$str$delim$item"
+  done
+  if [[ -z "${!var_name}" ]]; then
+      export "$var_name=$str"
+  else
+      export "$var_name=${!var_name}$delim$str"
+  fi
+}
+
+# Usage: postload_eval <command>
+#
+# Runs in the interactive shell after .envrc has been loaded.
+postload_eval() {
+    load_hook_add DIRENV_POSTLOAD "$@"
+}
+
+# Usage: preunload_eval <command>
+#
+# Runs in the interactive shell before .envrc is unloaded.
+preunload_eval() {
+    load_hook_add DIRENV_PREUNLOAD "$@"
+}
+
 # Usage: watch_file <filename> [<filename> ...]
 #
 # Adds each <filename> to the list of files that direnv will watch for changes -
@@ -515,6 +548,7 @@ path_add() {
   # and finally export back the result to the original variable
   export "$var_name=$path"
 }
+
 
 # Usage: MANPATH_add <path>
 #

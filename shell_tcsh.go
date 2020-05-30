@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -30,6 +31,10 @@ func (sh tcsh) Dump(env Env) (out string) {
 		out += sh.export(key, value)
 	}
 	return out
+}
+
+func (sh tcsh) Exec(commands []string) (string, error) {
+	return "", errors.New("tcsh shell exec unimplemented")
 }
 
 func (sh tcsh) export(key, value string) string {

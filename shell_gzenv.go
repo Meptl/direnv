@@ -22,3 +22,7 @@ func (s gzenvShell) Export(e ShellExport) string {
 func (s gzenvShell) Dump(env Env) string {
 	return gzenv.Marshal(env)
 }
+
+func (s gzenvShell) Exec(commands []string) (string, error) {
+	return "", errors.New("the gzenv shell doesn't support exec")
+}

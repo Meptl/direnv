@@ -32,6 +32,10 @@ func (sh vim) Dump(env Env) (out string) {
 	return out
 }
 
+func (sh vim) Exec(commands []string) (string, error) {
+	return "", errors.New("vim shell exec unimplemented")
+}
+
 func (sh vim) export(key, value string) string {
 	return "let $" + sh.escapeKey(key) + " = " + sh.escapeValue(value) + "\n"
 }

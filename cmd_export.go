@@ -93,7 +93,14 @@ func exportCommand(currentEnv Env, args []string, config *Config) (err error) {
 		logStatus(currentEnv, "export %s", out)
 	}
 
-	diffString := currentEnv.Diff(newEnv).ToShell(shell)
+	envDiff := currentEnv.Diff(newEnv)
+	var evalString strings.Builder
+
+	evalString.WriteString(envDiff.PreUnloadHooks(shell))
+	evalString.WriteString(envDiff.ToShell(shell))
+	evalString.WriteString(envDiff.PostLoadHooks(shell))
+
+	diffString := evalString.String()
 	logDebug("env diff %s", diffString)
 	fmt.Print(diffString)
 	return

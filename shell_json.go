@@ -33,3 +33,7 @@ func (sh jsonShell) Dump(env Env) string {
 	}
 	return string(out)
 }
+
+func (sh jsonShell) Exec(commands []string) (string, error) {
+	return "", errors.New("the json shell doesn't support execution")
+}

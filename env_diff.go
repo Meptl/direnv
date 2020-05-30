@@ -131,6 +131,39 @@ func (diff *EnvDiff) Serialize() string {
 	return gzenv.Marshal(diff)
 }
 
+// PreUnloadHooks parses the DIRENV_PRE_UNLOAD key for removed commands. The
+// outputted string is then meant to be evaluated in the target shell.
+func (diff *EnvDiff) PreUnloadHooks(shell Shell) string {
+	prevHooks := ExtractLoadHooks(diff.Prev[DIRENV_PREUNLOAD])
+	nextHooks := ExtractLoadHooks(diff.Next[DIRENV_PREUNLOAD])
+
+	preunload, err := shell.Exec(MissingLoadHooksOrdered(prevHooks, nextHooks))
+	if err == nil {
+		logDebug("preunloadhook: %s", preunload)
+		return preunload
+	}
+
+	logDebug("preunloadhook err: %v", err)
+	return ""
+}
+
+// PostLoadHooks parses the DIRENV_POST_LOAD key for commands that will be
+// added. The outputted string is then meant to be evaluated in the target
+// shell.
+func (diff *EnvDiff) PostLoadHooks(shell Shell) string {
+	prevHooks := ExtractLoadHooks(diff.Prev[DIRENV_POSTLOAD])
+	nextHooks := ExtractLoadHooks(diff.Next[DIRENV_POSTLOAD])
+
+	postload, err := shell.Exec(MissingLoadHooksOrdered(nextHooks, prevHooks))
+	if err == nil {
+		logDebug("postloadhook: %s", postload)
+		return postload
+	}
+
+	logDebug("postloadhook err: %v", err)
+	return ""
+}
+
 //// Utils
 
 // IgnoredEnv returns true if the key should be ignored in environment diffs.

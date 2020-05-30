@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type bash struct{}
 
@@ -40,6 +43,10 @@ func (sh bash) Dump(env Env) (out string) {
 		out += sh.export(key, value)
 	}
 	return out
+}
+
+func (sh bash) Exec(commands []string) (string, error) {
+	return "", errors.New("bash shell exec unimplemented")
 }
 
 func (sh bash) export(key, value string) string {

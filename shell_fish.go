@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -36,6 +37,10 @@ func (sh fish) Dump(env Env) (out string) {
 		out += sh.export(key, value)
 	}
 	return out
+}
+
+func (sh fish) Exec(commands []string) (string, error) {
+	return "", errors.New("fish shell exec unimplemented")
 }
 
 func (sh fish) export(key, value string) string {
