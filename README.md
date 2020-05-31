@@ -1,58 +1,22 @@
 direnv -- unclutter your .profile
 =================================
 
-[![Built with Nix](https://builtwithnix.org/badge.svg)](https://builtwithnix.org)
-[![Build Status](https://dev.azure.com/direnv/direnv/_apis/build/status/direnv.direnv?branchName=master)](https://dev.azure.com/direnv/direnv/_build/latest?definitionId=1&branchName=master)
-[![Packaging status](https://repology.org/badge/tiny-repos/direnv.svg)](https://repology.org/project/direnv/versions)
-[![latest packaged version(s)](https://repology.org/badge/latest-versions/direnv.svg)](https://repology.org/project/direnv/versions)
+This is a fork of [direnv](https://github.com/direnv/direnv). See their
+documentation for basic usage. This fork adds support for running commands in
+the interactive shell after loading the environment and before unloading the
+environment.
 
-`direnv` is an extension for your shell. It augments existing shells with a
-new feature that can load and unload environment variables depending on the
-current directory.
+Current functionality only supports zsh, but accomodating additional shells
+should be trivial.
 
-## Use cases
-
-* Load 12factor apps environment variables
-* Create per-project isolated development environments
-* Load secrets for deployment
-
-## How it works
-
-Before each prompt, direnv checks for the existence of a `.envrc` file in the
-current and parent directories. If the file exists (and is authorized), it is
-loaded into a **bash** sub-shell and all exported variables are then captured
-by direnv and then made available to the current shell.
-
-It supports hooks for all the common shells like bash, zsh, tcsh and fish.
-This allows project-specific environment variables without cluttering the
-`~/.profile` file.
-
-Because direnv is compiled into a single static executable, it is fast enough
-to be unnoticeable on each prompt. It is also language-agnostic and can be
-used to build solutions similar to rbenv, pyenv and phpenv.
-
-## Getting Started
-
-### Prerequisites
-
-* Unix-like operating system (macOS, Linux, ...)
-* A supported shell (bash, zsh, tcsh, fish, elvish)
-
-### Basic Installation
-
-1. direnv is packaged in most distributions already. See [the installation documentation](docs/installation.md) for details.
-2. [hook direnv into your shell](docs/hook.md).
-
-Now restart your shell.
-
-### Quick demo
-
-To follow along in your shell once direnv is installed.
-
+# Usage
+Add the following to .envrc
 ```
-# Create a new folder for demo purposes.
-$ mkdir ~/my-project
 $ cd ~/my-project
+.envrc is blocked.
+$ cat .envrc
+postload_eval "alias foo='echo 4'"
+preunload_eval "unalias foo
 
 # Show that the FOO environment variable is not loaded.
 $ echo ${FOO-nope}
@@ -66,21 +30,24 @@ $ echo export FOO=foo > .envrc
 # The security mechanism didn't allow to load the .envrc. Since we trust it,
 # let's allow its execution.
 $ direnv allow .
-direnv: reloading
 direnv: loading .envrc
-direnv export: +FOO
 
-# Show that the FOO environment variable is loaded.
-$ echo ${FOO-nope}
-foo
+$ foo
+4
 
-# Exit the project
 $ cd ..
 direnv: unloading
 
-# And now FOO is unset again
-$ echo ${FOO-nope}
-nope
+$ foo
+foo: command not found
+```
+
+You may want your shell native modifiers to be part of ~/.direnvrc
+```
+alias_add() {
+  postload_eval "alias $1='$2'"
+  preunload_eval "unalias $1"
+}
 ```
 
 ### The stdlib
