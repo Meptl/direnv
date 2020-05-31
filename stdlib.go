@@ -24,6 +24,9 @@ const StdLib = "#!/usr/bin/env bash\n" +
 	"# Where direnv configuration should be stored\n" +
 	"direnv_config_dir=\"${DIRENV_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/direnv}\"\n" +
 	"\n" +
+	"# A delimiter to place between load hooks.\n" +
+	"direnv_load_hook_delimiter=\"$(direnv load-hook-delimiter)\"\n" +
+	"\n" +
 	"# This variable can be used by programs to detect when they are running inside\n" +
 	"# of a .envrc evaluation context. It is ignored by the direnv diffing\n" +
 	"# algorithm and so it won't be re-exported.\n" +
@@ -306,6 +309,10 @@ const StdLib = "#!/usr/bin/env bash\n" +
 	"# NOTE: the other \".envrc\" is not checked by the security framework.\n" +
 	"source_env() {\n" +
 	"  local rcpath=${1/#\\~/$HOME}\n" +
+	"  if has cygpath ; then\n" +
+	"    rcpath=$(cygpath -u \"$rcpath\")\n" +
+	"  fi\n" +
+	"\n" +
 	"  local REPLY\n" +
 	"  if [[ -d $rcpath ]]; then\n" +
 	"    rcpath=$rcpath/.envrc\n" +
@@ -351,6 +358,36 @@ const StdLib = "#!/usr/bin/env bash\n" +
 	"source_env_if_exists() {\n" +
 	"  watch_file \"$1\"\n" +
 	"  if [[ -f \"$1\" ]]; then source_env \"$1\"; fi\n" +
+	"}\n" +
+	"\n" +
+	"# Usage: load_hook_add <varname> <command> [<command> ...]\n" +
+	"#\n" +
+	"# Adds commands to a variable using the load hook delimiter.\n" +
+	"load_hook_add() {\n" +
+	"  local delim=$direnv_load_hook_delimiter var_name=\"$1\" str=\"$2\"\n" +
+	"  shift; shift\n" +
+	"  for item in \"$@\"; do\n" +
+	"      str=\"$str$delim$item\"\n" +
+	"  done\n" +
+	"  if [[ -z \"${!var_name}\" ]]; then\n" +
+	"      export \"$var_name=$str\"\n" +
+	"  else\n" +
+	"      export \"$var_name=${!var_name}$delim$str\"\n" +
+	"  fi\n" +
+	"}\n" +
+	"\n" +
+	"# Usage: postload_eval <command>\n" +
+	"#\n" +
+	"# Runs in the interactive shell after .envrc has been loaded.\n" +
+	"postload_eval() {\n" +
+	"    load_hook_add DIRENV_POSTLOAD \"$@\"\n" +
+	"}\n" +
+	"\n" +
+	"# Usage: preunload_eval <command>\n" +
+	"#\n" +
+	"# Runs in the interactive shell before .envrc is unloaded.\n" +
+	"preunload_eval() {\n" +
+	"    load_hook_add DIRENV_PREUNLOAD \"$@\"\n" +
 	"}\n" +
 	"\n" +
 	"# Usage: watch_file <filename> [<filename> ...]\n" +
@@ -515,6 +552,7 @@ const StdLib = "#!/usr/bin/env bash\n" +
 	"  export \"$var_name=$path\"\n" +
 	"}\n" +
 	"\n" +
+	"\n" +
 	"# Usage: MANPATH_add <path>\n" +
 	"#\n" +
 	"# Prepends a path to the MANPATH environment variable while making sure that\n" +
@@ -565,8 +603,10 @@ const StdLib = "#!/usr/bin/env bash\n" +
 	"  results=()\n" +
 	"\n" +
 	"  # iterate over path entries, discard entries that match any of the patterns\n" +
+	"  # shellcheck disable=SC2068\n" +
 	"  for path in ${path_array[@]+\"${path_array[@]}\"}; do\n" +
 	"    discard=false\n" +
+	"    # shellcheck disable=SC2068\n" +
 	"    for pattern in ${patterns[@]+\"${patterns[@]}\"}; do\n" +
 	"      if [[ \"$path\" == +($pattern) ]]; then\n" +
 	"        discard=true\n" +
